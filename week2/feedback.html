@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .feedback-form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .feedback-form h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        .feedback-form input[type="text"],
+        .feedback-form input[type="email"],
+        .feedback-form input[type="tel"],
+        .feedback-form select,
+        .feedback-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .feedback-form textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .feedback-form button {
+            width: 100%;
+            padding: 10px;
+            background: #529af3;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .feedback-form button:hover {
+            background: #534be8;
+        }
+    </style>
+</head>
+<body>
+    <div class="feedback-form">
+        <h2>Feedback Form</h2>
+        <form action="#" method="post">
+            <input type="text" placeholder="Your Name" name="name" required>
+            <input type="email" placeholder="Your Email" name="email" required>
+            <input type="tel" placeholder="Your Phone Number" name="phone" required>
+            
+            <label for="rating">Rating </label>
+            <select name="rating" id="rating" required>
+                <option value="" disabled selected>Select Rating</option>
+                <option value="1">1 </option>
+                <option value="2">2 </option>
+                <option value="3">3 </option>
+                <option value="4">4 </option>
+                <option value="5">5 </option>
+            </select>
+
+            <textarea placeholder="Any questions regarding product or service" name="questions"></textarea>
+            <textarea placeholder="Additional Comments" name="comments"></textarea>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</body>
+</html>
