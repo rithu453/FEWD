@@ -1,0 +1,836 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Super Mario Style Game</title>
+    <style>
+        canvas {
+            border: 2px solid black;
+            background: #6495ED;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <script>
+        window.addEventListener('load', function() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Camera and world settings
+            const camera = {
+                x: 0,
+                y: 0
+            };
+
+            const worldWidth = 2400; // Three times the canvas width
+
+            // Background elements
+            const clouds = [];
+            for(let i = 0; i < 15; i++) {
+                clouds.push({
+                    x: Math.random() * worldWidth,
+                    y: Math.random() * 150,
+                    width: 60 + Math.random() * 40,
+                    height: 30 + Math.random() * 20
+                });
+            }
+
+            const mountains = [];
+            for(let i = 0; i < 8; i++) {
+                mountains.push({
+                    x: i * 300,
+                    y: 250,
+                    height: 100 + Math.random() * 50
+                });
+            }
+
+            // Game objects
+            const player = {
+                x: 50,
+                y: 200,
+                width: 40,
+                height: 50,
+                speed: 5,
+                jumpForce: 12,
+                gravity: 0.5,
+                velocityY: 0,
+                isJumping: false,
+                worldX: 50 // Actual position in the world
+            };
+
+            const platform = {
+                x: 0,
+                y: 300,
+                width: worldWidth,
+                height: 100
+            };
+
+            // Spread coins across the world
+            const coins = [];
+            for(let i = 0; i < 12; i++) {
+                coins.push({
+                    x: 200 + i * 200,
+                    y: 200 + Math.sin(i) * 50,
+                    width: 20,
+                    height: 20,
+                    collected: false
+                });
+            }
+
+            let score = 0;
+            let rightPressed = false;
+            let leftPressed = false;
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight') rightPressed = true;
+                if (e.key === 'ArrowLeft') leftPressed = true;
+                if (e.key === 'ArrowUp' && !player.isJumping) {
+                    player.velocityY = -player.jumpForce;
+                    player.isJumping = true;
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'ArrowRight') rightPressed = false;
+                if (e.key === 'ArrowLeft') leftPressed = false;
+            });
+
+            function drawCloud(cloud) {
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.ellipse(
+                    cloud.x - camera.x, 
+                    cloud.y, 
+                    cloud.width/2, 
+                    cloud.height/2, 
+                    0, 0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+
+            function drawMountain(mountain) {
+                ctx.fillStyle = '#4a4a4a';
+                ctx.beginPath();
+                ctx.moveTo(mountain.x - camera.x, platform.y);
+                ctx.lineTo(mountain.x - camera.x + 100, platform.y - mountain.height);
+                ctx.lineTo(mountain.x - camera.x + 200, platform.y);
+                ctx.fill();
+            }
+
+            function drawPlayer() {
+                ctx.fillStyle = 'red';
+                ctx.strokeStyle = 'darkred';
+                ctx.lineWidth = 2;
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+                ctx.strokeRect(player.x, player.y, player.width, player.height);
+                
+                ctx.fillStyle = 'black';
+                ctx.fillRect(player.x + 10, player.y + 15, 5, 5);
+                ctx.fillRect(player.x + 25, player.y + 15, 5, 5);
+                ctx.beginPath();
+                ctx.arc(player.x + 20, player.y + 30, 8, 0, Math.PI);
+                ctx.stroke();
+            }
+
+            function drawPlatform() {
+                ctx.fillStyle = '#228B22';
+                ctx.fillRect(platform.x - camera.x, platform.y, platform.width, platform.height);
+                
+                // Draw grass detail
+                ctx.fillStyle = '#32CD32';
+                ctx.fillRect(platform.x - camera.x, platform.y, platform.width, 10);
+            }
+
+            function drawCoins() {
+                ctx.fillStyle = 'gold';
+                coins.forEach(coin => {
+                    if (!coin.collected) {
+                        ctx.beginPath();
+                        ctx.arc(coin.x - camera.x + coin.width/2, coin.y + coin.height/2, 
+                               coin.width/2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+            }
+
+            function drawScore() {
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.fillText(`Score: ${score}`, 20, 30);
+            }
+
+            function checkCollisions() {
+                if (player.y + player.height > platform.y) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.isJumping = false;
+                }
+
+                coins.forEach(coin => {
+                    if (!coin.collected &&
+                        player.worldX < coin.x + coin.width &&
+                        player.worldX + player.width > coin.x &&
+                        player.y < coin.y + coin.height &&
+                        player.y + player.height > coin.y) {
+                        coin.collected = true;
+                        score += 10;
+                    }
+                });
+            }
+
+            function update() {
+                // Player movement
+                if (rightPressed && player.worldX < worldWidth - player.width) {
+                    player.worldX += player.speed;
+                }
+                if (leftPressed && player.worldX > 0) {
+                    player.worldX -= player.speed;
+                }
+
+                // Update camera to follow player
+                camera.x = player.worldX - canvas.width/3;
+                camera.x = Math.max(0, Math.min(camera.x, worldWidth - canvas.width));
+
+                // Set player's screen position
+                player.x = player.worldX - camera.x;
+
+                // Gravity
+                player.velocityY += player.gravity;
+                player.y += player.velocityY;
+
+                checkCollisions();
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw background
+                mountains.forEach(drawMountain);
+                clouds.forEach(drawCloud);
+                drawPlatform();
+                drawCoins();
+                drawPlayer();
+                drawScore();
+            }
+
+            function gameLoop() {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+
+            draw();
+            gameLoop();
+        });
+    </script>
+</body>
+</html> -->
+<!-- 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Super Mario Style Game</title>
+    <style>
+        canvas {
+            border: 2px solid black;
+            background: #6495ED;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <script>
+        window.addEventListener('load', function() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const camera = {
+                x: 0,
+                y: 0
+            };
+
+            const worldWidth = 2400;
+
+            // Question blocks (hit from below)
+            const blocks = [
+                { x: 200, y: 150, width: 30, height: 30, hit: false },
+                { x: 400, y: 150, width: 30, height: 30, hit: false },
+                { x: 600, y: 150, width: 30, height: 30, hit: false },
+                { x: 800, y: 150, width: 30, height: 30, hit: false }
+            ];
+
+            // Obstacles that disappear on touch
+            const obstacles = [
+                { x: 300, y: 250, width: 30, height: 30, active: true },
+                { x: 500, y: 250, width: 30, height: 30, active: true },
+                { x: 700, y: 250, width: 30, height: 30, active: true },
+                { x: 900, y: 250, width: 30, height: 30, active: true }
+            ];
+
+            const clouds = [];
+            for(let i = 0; i < 15; i++) {
+                clouds.push({
+                    x: Math.random() * worldWidth,
+                    y: Math.random() * 150,
+                    width: 60 + Math.random() * 40,
+                    height: 30 + Math.random() * 20
+                });
+            }
+
+            const mountains = [];
+            for(let i = 0; i < 8; i++) {
+                mountains.push({
+                    x: i * 300,
+                    y: 250,
+                    height: 100 + Math.random() * 50
+                });
+            }
+
+            const player = {
+                x: 50,
+                y: 200,
+                width: 40,
+                height: 50,
+                speed: 5,
+                jumpForce: 12,
+                gravity: 0.5,
+                velocityY: 0,
+                isJumping: false,
+                worldX: 50
+            };
+
+            const platform = {
+                x: 0,
+                y: 300,
+                width: worldWidth,
+                height: 100
+            };
+
+            const coins = [];
+            for(let i = 0; i < 12; i++) {
+                coins.push({
+                    x: 200 + i * 200,
+                    y: 200 + Math.sin(i) * 50,
+                    width: 20,
+                    height: 20,
+                    collected: false
+                });
+            }
+
+            let score = 0;
+            let rightPressed = false;
+            let leftPressed = false;
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight') rightPressed = true;
+                if (e.key === 'ArrowLeft') leftPressed = true;
+                if (e.key === 'ArrowUp' && !player.isJumping) {
+                    player.velocityY = -player.jumpForce;
+                    player.isJumping = true;
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'ArrowRight') rightPressed = false;
+                if (e.key === 'ArrowLeft') leftPressed = false;
+            });
+
+            function drawCloud(cloud) {
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.ellipse(
+                    cloud.x - camera.x, 
+                    cloud.y, 
+                    cloud.width/2, 
+                    cloud.height/2, 
+                    0, 0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+
+            function drawMountain(mountain) {
+                ctx.fillStyle = '#4a4a4a';
+                ctx.beginPath();
+                ctx.moveTo(mountain.x - camera.x, platform.y);
+                ctx.lineTo(mountain.x - camera.x + 100, platform.y - mountain.height);
+                ctx.lineTo(mountain.x - camera.x + 200, platform.y);
+                ctx.fill();
+            }
+
+            function drawBlocks() {
+                blocks.forEach(block => {
+                    if (!block.hit) {
+                        ctx.fillStyle = '#E3A018';
+                    } else {
+                        ctx.fillStyle = '#886307';
+                    }
+                    ctx.fillRect(block.x - camera.x, block.y, block.width, block.height);
+                    
+                    // Question mark
+                    if (!block.hit) {
+                        ctx.fillStyle = 'white';
+                        ctx.font = '20px Arial';
+                        ctx.fillText('?', block.x - camera.x + 10, block.y + 22);
+                    }
+                });
+            }
+
+            function drawObstacles() {
+                obstacles.forEach(obstacle => {
+                    if (obstacle.active) {
+                        ctx.fillStyle = '#8B4513';
+                        ctx.fillRect(obstacle.x - camera.x, obstacle.y, obstacle.width, obstacle.height);
+                        
+                        // Add brick pattern
+                        ctx.strokeStyle = '#693412';
+                        ctx.beginPath();
+                        ctx.moveTo(obstacle.x - camera.x, obstacle.y + obstacle.height/2);
+                        ctx.lineTo(obstacle.x - camera.x + obstacle.width, obstacle.y + obstacle.height/2);
+                        ctx.stroke();
+                    }
+                });
+            }
+
+            function drawPlayer() {
+                ctx.fillStyle = 'red';
+                ctx.strokeStyle = 'darkred';
+                ctx.lineWidth = 2;
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+                ctx.strokeRect(player.x, player.y, player.width, player.height);
+                
+                ctx.fillStyle = 'black';
+                ctx.fillRect(player.x + 10, player.y + 15, 5, 5);
+                ctx.fillRect(player.x + 25, player.y + 15, 5, 5);
+                ctx.beginPath();
+                ctx.arc(player.x + 20, player.y + 30, 8, 0, Math.PI);
+                ctx.stroke();
+            }
+
+            function drawPlatform() {
+                ctx.fillStyle = '#228B22';
+                ctx.fillRect(platform.x - camera.x, platform.y, platform.width, platform.height);
+                ctx.fillStyle = '#32CD32';
+                ctx.fillRect(platform.x - camera.x, platform.y, platform.width, 10);
+            }
+
+            function drawCoins() {
+                ctx.fillStyle = 'gold';
+                coins.forEach(coin => {
+                    if (!coin.collected) {
+                        ctx.beginPath();
+                        ctx.arc(coin.x - camera.x + coin.width/2, coin.y + coin.height/2, 
+                               coin.width/2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+            }
+
+            function drawScore() {
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.fillText(`Score: ${score}`, 20, 30);
+            }
+
+            function checkCollisions() {
+                // Platform collision
+                if (player.y + player.height > platform.y) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.isJumping = false;
+                }
+
+                // Block collisions (hit from below)
+                blocks.forEach(block => {
+                    if (!block.hit && 
+                        player.worldX + player.width > block.x &&
+                        player.worldX < block.x + block.width &&
+                        player.y > block.y &&
+                        player.y < block.y + block.height + 10 &&
+                        player.velocityY < 0) {
+                        block.hit = true;
+                        player.velocityY = 2;
+                        score += 50;
+                    }
+                });
+
+                // Obstacle collisions (disappear on touch)
+                obstacles.forEach(obstacle => {
+                    if (obstacle.active &&
+                        player.worldX + player.width > obstacle.x &&
+                        player.worldX < obstacle.x + obstacle.width &&
+                        player.y + player.height > obstacle.y &&
+                        player.y < obstacle.y + obstacle.height) {
+                        obstacle.active = false;
+                        score += 30;
+                    }
+                });
+
+                // Coin collection
+                coins.forEach(coin => {
+                    if (!coin.collected &&
+                        player.worldX < coin.x + coin.width &&
+                        player.worldX + player.width > coin.x &&
+                        player.y < coin.y + coin.height &&
+                        player.y + player.height > coin.y) {
+                        coin.collected = true;
+                        score += 10;
+                    }
+                });
+            }
+
+            function update() {
+                if (rightPressed && player.worldX < worldWidth - player.width) {
+                    player.worldX += player.speed;
+                }
+                if (leftPressed && player.worldX > 0) {
+                    player.worldX -= player.speed;
+                }
+
+                camera.x = player.worldX - canvas.width/3;
+                camera.x = Math.max(0, Math.min(camera.x, worldWidth - canvas.width));
+
+                player.x = player.worldX - camera.x;
+
+                player.velocityY += player.gravity;
+                player.y += player.velocityY;
+
+                checkCollisions();
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                mountains.forEach(drawMountain);
+                clouds.forEach(drawCloud);
+                drawPlatform();
+                drawBlocks();
+                drawObstacles();
+                drawCoins();
+                drawPlayer();
+                drawScore();
+            }
+
+            function gameLoop() {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+
+            draw();
+            gameLoop();
+        });
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Super Mario Clone</title>
+    <style>
+        canvas {
+            border: 2px solid black;
+            background: #6495ED;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #333;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <script>
+        window.addEventListener('load', function() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Game constants
+            const GROUND_Y = 300;
+            const GRAVITY = 0.5;
+            const JUMP_FORCE = -12;
+            const MOVE_SPEED = 5;
+            const FRICTION = 0.85;
+
+            // Player object
+            const player = {
+                x: 50,
+                y: GROUND_Y - 40,
+                width: 40,
+                height: 40,
+                velX: 0,
+                velY: 0,
+                jumping: false,
+                score: 0,
+                isAlive: true
+            };
+
+            // Question blocks
+            const blocks = [
+                {x: 300, y: 180, active: true},
+                {x: 400, y: 180, active: true},
+                {x: 500, y: 180, active: true},
+                {x: 600, y: 180, active: true}
+            ];
+
+            // Enemies
+            const enemies = [
+                {x: 400, y: GROUND_Y - 30, active: true, direction: -1},
+                {x: 600, y: GROUND_Y - 30, active: true, direction: -1},
+                {x: 800, y: GROUND_Y - 30, active: true, direction: -1}
+            ];
+
+            // Coins
+            const coins = [
+                {x: 200, y: 200, active: true},
+                {x: 350, y: 150, active: true},
+                {x: 500, y: 200, active: true},
+                {x: 650, y: 150, active: true}
+            ];
+
+            // Input handling
+            let keys = {
+                left: false,
+                right: false,
+                up: false
+            };
+
+            document.addEventListener('keydown', function(e) {
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        keys.left = true;
+                        break;
+                    case 'ArrowRight':
+                        keys.right = true;
+                        break;
+                    case 'ArrowUp':
+                    case ' ':
+                        keys.up = true;
+                        break;
+                }
+            });
+
+            document.addEventListener('keyup', function(e) {
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        keys.left = false;
+                        break;
+                    case 'ArrowRight':
+                        keys.right = false;
+                        break;
+                    case 'ArrowUp':
+                    case ' ':
+                        keys.up = false;
+                        break;
+                }
+            });
+
+            function updatePlayer() {
+                // Horizontal movement
+                if (keys.left) {
+                    player.velX = Math.max(player.velX - 1, -MOVE_SPEED);
+                }
+                if (keys.right) {
+                    player.velX = Math.min(player.velX + 1, MOVE_SPEED);
+                }
+
+                // Apply friction
+                if (!keys.left && !keys.right) {
+                    player.velX *= FRICTION;
+                }
+
+                // Jumping
+                if (keys.up && !player.jumping) {
+                    player.velY = JUMP_FORCE;
+                    player.jumping = true;
+                }
+
+                // Apply gravity
+                player.velY += GRAVITY;
+
+                // Update position
+                player.x += player.velX;
+                player.y += player.velY;
+
+                // Ground collision
+                if (player.y > GROUND_Y - player.height) {
+                    player.y = GROUND_Y - player.height;
+                    player.velY = 0;
+                    player.jumping = false;
+                }
+
+                // Screen boundaries
+                if (player.x < 0) {
+                    player.x = 0;
+                    player.velX = 0;
+                }
+                if (player.x > canvas.width - player.width) {
+                    player.x = canvas.width - player.width;
+                    player.velX = 0;
+                }
+            }
+
+            function updateEnemies() {
+                enemies.forEach(enemy => {
+                    if (enemy.active) {
+                        // Move enemies
+                        enemy.x += enemy.direction * 2;
+
+                        // Change direction at screen edges
+                        if (enemy.x < 0 || enemy.x > canvas.width - 30) {
+                            enemy.direction *= -1;
+                        }
+
+                        // Check collision with player
+                        if (checkCollision(player, enemy)) {
+                            // Player jumping on enemy
+                            if (player.velY > 0 && player.y + player.height < enemy.y + 20) {
+                                enemy.active = false;
+                                player.velY = JUMP_FORCE / 1.5;
+                                player.score += 100;
+                            } else {
+                                // Player hit by enemy
+                                player.isAlive = false;
+                            }
+                        }
+                    }
+                });
+            }
+
+            function checkCollision(rect1, rect2) {
+                return rect1.x < rect2.x + 30 &&
+                       rect1.x + rect1.width > rect2.x &&
+                       rect1.y < rect2.y + 30 &&
+                       rect1.y + rect1.height > rect2.y;
+            }
+
+            function updateBlocks() {
+                blocks.forEach(block => {
+                    if (block.active && 
+                        player.y + player.height <= block.y &&
+                        player.y + player.height + player.velY >= block.y &&
+                        player.x + player.width > block.x &&
+                        player.x < block.x + 40) {
+                        
+                        player.velY = 0;
+                        player.y = block.y - player.height;
+                        player.jumping = false;
+                    }
+                });
+            }
+
+            function checkCoinCollision() {
+                coins.forEach(coin => {
+                    if (coin.active && checkCollision(player, coin)) {
+                        coin.active = false;
+                        player.score += 10;
+                    }
+                });
+            }
+
+            function draw() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw ground
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
+                // Draw blocks
+                ctx.fillStyle = '#ffd700';
+                blocks.forEach(block => {
+                    if (block.active) {
+                        ctx.fillRect(block.x, block.y, 40, 40);
+                        // Question mark
+                        ctx.fillStyle = '#000';
+                        ctx.font = '20px Arial';
+                        ctx.fillText('?', block.x + 15, block.y + 25);
+                        ctx.fillStyle = '#ffd700';
+                    }
+                });
+
+                // Draw coins
+                ctx.fillStyle = '#ffd700';
+                coins.forEach(coin => {
+                    if (coin.active) {
+                        ctx.beginPath();
+                        ctx.arc(coin.x + 15, coin.y + 15, 10, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+
+                // Draw enemies
+                ctx.fillStyle = '#8b4513';
+                enemies.forEach(enemy => {
+                    if (enemy.active) {
+                        ctx.fillRect(enemy.x, enemy.y, 30, 30);
+                    }
+                });
+
+                // Draw player
+                if (player.isAlive) {
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+
+                    // Player face
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(player.x + 10, player.y + 10, 5, 5);
+                    ctx.fillRect(player.x + 25, player.y + 10, 5, 5);
+                    ctx.fillRect(player.x + 10, player.y + 25, 20, 3);
+                }
+
+                // Draw score
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Score: ${player.score}`, 20, 30);
+
+                // Game over screen
+                if (!player.isAlive) {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '48px Arial';
+                    ctx.fillText('Game Over!', canvas.width/2 - 100, canvas.height/2);
+                    ctx.font = '24px Arial';
+                    ctx.fillText(`Final Score: ${player.score}`, canvas.width/2 - 70, canvas.height/2 + 40);
+                }
+            }
+
+            function gameLoop() {
+                if (player.isAlive) {
+                    updatePlayer();
+                    updateEnemies();
+                    updateBlocks();
+                    checkCoinCollection();
+                }
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Start the game
+            gameLoop();
+        });
+    </script>
+</body>
+</html>

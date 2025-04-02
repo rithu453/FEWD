@@ -1,0 +1,226 @@
+body {
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+.game-container {
+    width: 80%;
+    height: 300px;
+    background-color: #fff;
+    overflow: hidden;
+}
+
+.dino {
+    width: 50px;
+    height: 50px;
+    background-color: #f20808;
+    position: absolute;
+    bottom: 0;
+    left: 50px;
+    border-radius: 50px;
+}
+.player {
+    position: absolute;
+    bottom: 0;
+    transition: bottom 0.1s;
+}
+
+/* Mario as a Ball */
+#mario {
+    left: 50px;
+    width: 50px;
+    height: 50px;
+    background: red;
+    border-radius: 50%;  /* Circular shape */
+}
+
+/* Luigi as a Stick */
+#luigi {
+    left: 150px;
+    width: 20px;
+    height: 100px;
+    background: blue;
+    border-radius: 5px;  /* Slightly rounded edges */
+}
+
+
+.cactus {
+    width: 25px;
+    height: 60px;
+    background-color: green;
+    position: absolute;
+    bottom: 0;
+    right: -30px;
+    animation: moveCactus 2s infinite linear;
+    border-radius: 3px;
+}
+
+@keyframes moveCactus {
+    0% {
+        right: -30px;
+    }
+    100% {
+        right: 100%;
+    }
+}
+
+.jump {
+    animation: jumpMario 0.5s ease;
+}
+
+@keyframes jumpMario {
+    0% {
+        bottom: 0;
+    }
+    50% {
+        bottom: 150px;
+    }
+    100% {
+        bottom: 0;
+    }
+}
+
+
+.game-area {
+    position: relative;
+    width: 100vw;
+    height: 300px;
+    background: #f7f7f7;
+    overflow: hidden;
+    border: 2px solid #ccc;
+}
+
+.player {
+    position: absolute;
+    bottom: 0;
+    width: 50px;
+    height: 50px;
+    background: green;
+    transition: bottom 0.1s;
+}
+
+#luigi {
+    width: 20px;
+    height: 60px;
+    background-color: #097cff;
+    position: absolute;
+    bottom: 0;
+    left: 65px;
+    border-radius: 10px;
+}
+
+
+.cactus {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 50px;
+    height: 50px;
+    background: red;
+    animation: moveGoomba 2s infinite linear;
+}
+
+
+@keyframes moveGoomba {
+    from {
+        right: -50px;
+    }
+    to {
+        right: 100vw;
+    }
+}
+
+.jump {
+    bottom: 100px !important;
+}
+
+.scoreboard {
+    background-color: #fff;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 250px;
+    margin: 20px auto;
+    padding: 10px;
+    text-align: center;
+}
+
+.scoreboard p {
+    font-size: 18px;
+    color: #333;
+    margin: 5px 0;
+    font-weight: bold;
+}
+
+/* Player 1 Scores */
+#score1,
+#high-score1 {
+    color: #d9534f; /* Red for Player 1 */
+}
+
+/* Player 2 Scores */
+#score2,
+#high-score2 {
+    color: #5bc0de; /* Blue for Player 2 */
+}
+
+.human {
+    position: absolute;
+    bottom: 0;
+    left: 50px;
+    width: 50px;
+    height: 100px;
+    background-color: #ffcc00;
+    border-radius: 10px;
+    animation: walk 1s steps(4) infinite;
+}
+
+.human::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10px;
+    width: 30px;
+    height: 30px;
+    background-color: #ffeb3b;
+    border-radius: 50%;
+}
+
+@keyframes walk {
+    0% {
+        background-position: 0;
+    }
+    100% {
+        background-position: -200px;
+    }
+}
+
+.move-right {
+    animation: moveRight 3s linear infinite;
+}
+
+@keyframes moveRight {
+    0% {
+        left: 50px;
+    }
+    100% {
+        left: calc(100vw - 100px);
+    }
+}
+
+.jump {
+    animation: jumpAnimation 0.5s ease;
+}
+
+@keyframes jumpAnimation {
+    0% {
+        bottom: 0;
+    }
+    50% {
+        bottom: 150px;
+    }
+    100% {
+        bottom: 0;
+    }
+}
+
